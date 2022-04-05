@@ -31,15 +31,17 @@ public class AppView extends JDialog {
     private int vidasRestantes;
     private DefaultListModel<Character> letrasUsadasListModel;
 
-    private boolean stringContainsDigit(String s) {
-        boolean containsDigit = false;
+    private boolean stringLettersAndHifens(String s) {
+        boolean isStringJustLettersAndHifens = true;
         for (Character ch : s.toCharArray()) {
-            if (ch >= '0' && ch <= '9') {
-                containsDigit = true;
+            if (!((ch >= 65 && ch <= 90) ||
+                  (ch >= 97 && ch <= 122) ||
+                  (ch == 45))) {
+                isStringJustLettersAndHifens = false;
                 break;
             }
         }
-        return containsDigit;
+        return isStringJustLettersAndHifens;
     }
 
     public AppView() {
@@ -99,21 +101,23 @@ public class AppView extends JDialog {
             public void insertUpdate(DocumentEvent e) {
                 iniciarButton.setEnabled(
                         !(inputsTextField.getText().isBlank()) &&
-                        !(stringContainsDigit(inputsTextField.getText())) &&
+                         (stringLettersAndHifens(inputsTextField.getText())) &&
                         !(letrasUsadas.contains(inputsTextField.getText().toCharArray()[0])));
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                iniciarButton.setEnabled(!(inputsTextField.getText().isBlank()) &&
-                        !(stringContainsDigit(inputsTextField.getText())) &&
+                iniciarButton.setEnabled(
+                        !(inputsTextField.getText().isBlank()) &&
+                         (stringLettersAndHifens(inputsTextField.getText())) &&
                         !(letrasUsadas.contains(inputsTextField.getText().toCharArray()[0])));
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                iniciarButton.setEnabled(!(inputsTextField.getText().isBlank()) &&
-                        !(stringContainsDigit(inputsTextField.getText())) &&
+                iniciarButton.setEnabled(
+                        !(inputsTextField.getText().isBlank()) &&
+                         (stringLettersAndHifens(inputsTextField.getText())) &&
                         !(letrasUsadas.contains(inputsTextField.getText().toCharArray()[0])));
             }
         });
@@ -195,14 +199,18 @@ public class AppView extends JDialog {
             letrasHabilitadas.remove(letra);
 
             char[] palavraLabelAntiga = palavraLabel.getText().toCharArray();
-            char[] palavraSecretaCharArray = palavraSecreta.toCharArray();
+            char[] palavraSecretaCharArray = palavraSecreta.replaceAll(" ", "").toCharArray();
 
             int index = 0;
             for (int i = 0; i < palavraLabelAntiga.length; i++) {
-                if (palavraLabelAntiga[i] != ' ') {
+                if (palavraLabelAntiga[i] == '_') {
                     if (palavraSecretaCharArray[index] == letra) {
                         palavraLabelAntiga[i] = letra;
                     }
+                    index++;
+                } else if ((palavraLabelAntiga[i] >= 65 && palavraLabelAntiga[i] <= 90) ||
+                            palavraLabelAntiga[i] >= 97 && palavraLabelAntiga[i] <= 122 ||
+                            palavraLabelAntiga[i] == '-') {
                     index++;
                 }
             }
@@ -224,6 +232,7 @@ public class AppView extends JDialog {
         } else if (letra >= 65 && letra <= 90){
             letrasUsadas.add((char) (letra + 32));
         }
+        pack();
     }
 
     private void onIniciar() {
@@ -233,6 +242,7 @@ public class AppView extends JDialog {
             palavraLabel.setText(iniciarPalavraSecreta(palavraSecreta));
             iniciarButton.setText("Chutar");
             sairButton.setText("Desistir");
+            pack();
         } else if (iniciarButton.getText().equals("Chutar")) {
             char letraChutada = inputsTextField.getText().toCharArray()[0];
             fazerUmChute(letraChutada);
@@ -252,7 +262,11 @@ public class AppView extends JDialog {
         if (sairButton.getText().equals("Sair")) {
             dispose();
         } else if (sairButton.getText().equals("Desistir")) {
-            int isDesistente = JOptionPane.showConfirmDialog(this, "Tem certeza que quer desistir?");
+            int isDesistente = JOptionPane.showConfirmDialog(this, "Tem certeza que quer desistir?", "Desistir do jogo?", JOptionPane.YES_NO_OPTION);
+            if (isDesistente == 0) {
+                JOptionPane.showMessageDialog(this, "Você desistiu. A palavra era \"" + palavraSecreta + "\".");
+                finalizarJogo();
+            }
         }
     }
 
